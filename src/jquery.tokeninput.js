@@ -23,7 +23,8 @@ $.fn.tokenInput = function (url, options) {
         method: "GET",
         contentType: "json",
         queryParam: "q",
-        onResult: null
+        onResult: null,
+        canCreate: false
     }, options);
 
     settings.classes = $.extend({
@@ -453,7 +454,7 @@ $.TokenList = function (input, settings) {
 
     // Populate the results dropdown with some results
     function populate_dropdown (query, results) {
-        if(results.length) {
+        if(results.length || settings.canCreate) {
             dropdown.empty();
             var dropdown_ul = $("<ul>")
                 .appendTo(dropdown)
@@ -469,6 +470,9 @@ $.TokenList = function (input, settings) {
                 })
                 .hide();
 
+            // Save the first li for selecting
+            var firstLi;
+
             for(var i in results) {
                 if (results.hasOwnProperty(i)) {
                     var this_li = $("<li>"+highlight_term(results[i].name, query)+"</li>")
@@ -481,11 +485,32 @@ $.TokenList = function (input, settings) {
                     }
 
                     if(i == 0) {
-                        select_dropdown_item(this_li);
+                        firstLi = this_li;
                     }
 
                     $.data(this_li.get(0), "tokeninput", {"id": results[i].id, "name": results[i].name});
                 }
+            }
+            
+            // If canCreate option enabled, show "Create 'token-name'"
+            if(settings.canCreate) {
+                var li = $("<li>Create '" + query + "'</li>")
+                            .appendTo(dropdown_ul);
+                // li.addClass(results.length%2 ? settings.classes.dropdownItem : settings.classes.dropdownItem2);
+                if(results.length % 2) {
+                    li.addClass(settings.classes.dropdownItem);
+                } else {
+                    li.addClass(settings.classes.dropdownItem2);
+                }
+                
+                if(results.length == 0) {
+                    firstLi = li;
+                }
+                
+                $.data(li.get(0), "tokeninput", { "id": "+" + query, "name": query });
+            }
+            if(firstLi) {
+                select_dropdown_item(firstLi);
             }
 
             dropdown.show();
