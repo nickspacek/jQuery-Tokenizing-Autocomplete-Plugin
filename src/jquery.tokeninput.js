@@ -333,6 +333,11 @@ $.TokenList = function (input, settings) {
     // Add a token to the token list based on user input
     function add_token (item) {
         var li_data = $.data(item.get(0), "tokeninput");
+        
+        create_token(li_data);
+    }
+    
+    function create_token (li_data) {
         var this_token = insert_token(li_data.id, li_data.name);
 
         // Clear input box and make sure it keeps focus
@@ -353,6 +358,30 @@ $.TokenList = function (input, settings) {
             input_box.hide();
             hide_dropdown();
         }
+
+        $(hidden_input).trigger('tokenadd', {
+            update: update_token,
+            remove: delete_token,
+            data: li_data,
+            token: this_token.get(0)
+        });
+    }
+    
+    function update_token (item, data) {
+        var old_data = $.data(item, "tokeninput");
+        var new_data = {
+            id: data.id == undefined ? old_data.id : data.id,
+            name: data.name == undefined ? old_data.name : data.name
+        };
+        
+        $.data(item, "tokeninput", data);
+        
+        var old_id_string = old_data.id + ",";
+        var new_id_string = new_data.id + ",";
+        
+        hidden_input.val(
+            hidden_input.val().replace(old_id_string, new_id_string)
+        );
     }
 
     // Select a token in the token list
@@ -427,6 +456,11 @@ $.TokenList = function (input, settings) {
                 .val("")
                 .focus();
         }
+
+        $(hidden_input).trigger('tokendelete', {
+            add: create_token,
+            data: token_data
+        });
     }
 
     // Hide and clear the results dropdown
@@ -470,11 +504,20 @@ $.TokenList = function (input, settings) {
                 })
                 .hide();
 
+            // Check for duplicates
+            var resultAdded = new Array();
+            $("." + settings.classes.token, token_list)
+                .each(function(i, val) {
+                    var data = $.data(val, "tokeninput");
+                    resultAdded[data.name] = 1;
+                }
+            );
+            
             // Save the first li for selecting
             var firstLi;
 
             for(var i in results) {
-                if (results.hasOwnProperty(i)) {
+                if (results.hasOwnProperty(i) && !resultAdded[results[i].name]) {
                     var this_li = $("<li>"+highlight_term(results[i].name, query)+"</li>")
                                       .appendTo(dropdown_ul);
 
@@ -487,13 +530,14 @@ $.TokenList = function (input, settings) {
                     if(i == 0) {
                         firstLi = this_li;
                     }
-
+                    
+                    resultAdded[results[i].name] = 1;
                     $.data(this_li.get(0), "tokeninput", {"id": results[i].id, "name": results[i].name});
                 }
             }
             
             // If canCreate option enabled, show "Create 'token-name'"
-            if(settings.canCreate) {
+            if(settings.canCreate && !resultAdded[query]) {
                 var li = $("<li>Create '" + query + "'</li>")
                             .appendTo(dropdown_ul);
                 // li.addClass(results.length%2 ? settings.classes.dropdownItem : settings.classes.dropdownItem2);
