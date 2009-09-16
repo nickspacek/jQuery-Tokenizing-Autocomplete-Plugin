@@ -230,19 +230,23 @@ $.TokenList = function (input, settings) {
         })
         .mouseover(function (event) {
             var li = get_element_from_event(event, "li");
-            if(li && selected_token !== this) {
+            if(!li) { return; }
+            
+            if(selected_token !== this) {
                 li.addClass(settings.classes.highlightedToken);
             }
-            if(li) {
+            if(!editEnabled && settings.linkedTagPrefix) {
                 li.addClass(settings.classes.linkedToken);
             }
         })
         .mouseout(function (event) {
             var li = get_element_from_event(event, "li");
-            if(li && selected_token !== this) {
+            if(!li) { return; }
+            
+            if(selected_token !== this) {
                 li.removeClass(settings.classes.highlightedToken);
             }
-            if(li) {
+            if(!editEnabled && settings.linkedTagPrefix) {
                 li.removeClass(settings.classes.linkedToken);
             }
         })
